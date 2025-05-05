@@ -183,11 +183,20 @@ Item {
 
                             Kirigami.Icon {
                                 implicitWidth: 16
-                                implicitHeight: 16
+                                implicitHeight: implicitWidth
 
                                 source: model.iconName
 
                                 opacity: model.isHidden ? 0.5 : 1.0
+
+                                Kirigami.Icon {
+                                    anchors.bottom: parent.bottom
+
+                                    width: 8
+                                    height: width
+
+                                    source: model.emblemName
+                                }
                             }
                             Text {
                                 Layout.fillWidth: true

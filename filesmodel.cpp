@@ -1,7 +1,6 @@
 #include "filesmodel.h"
 
 #include <QMimeDatabase>
-#include <QDir>
 #include <QDesktopServices>
 #include <QUrl>
 
@@ -41,6 +40,8 @@ QVariant FilesModel::data(const QModelIndex &index, int role) const
         return delegate->size();
     case HiddenRole:
         return delegate->isHidden();
+    case EmblemNameRole:
+        return delegate->emblemName();
     }
 
     return QVariant();
@@ -56,6 +57,54 @@ QString FilesModel::getMimeType(const QString &filePath)
     QMimeDatabase mimeDb;
     QMimeType mime = mimeDb.mimeTypeForFile(filePath);
     return mime.name();
+}
+
+QString FilesModel::getEmblem(const QFileInfo &file)
+{
+    if(!file.isReadable() || !file.isWritable())
+        return "emblem-readonly";
+    if(file.isSymLink())
+        return "emblem-symbolic-link";
+    else
+        return "";
+}
+
+void FilesModel::getFiles()
+{
+    beginResetModel();
+    m_files.clear();
+    endResetModel();
+
+    QDir directory(m_currentDir);
+
+    m_currentDirIcon = KIO::iconNameForUrl(QUrl::fromLocalFile(directory.absolutePath()));
+
+    directory.setSorting(QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
+    directory.setFilter(QDir::AllEntries | QDir::Hidden);
+    QList<QFileInfo> fileList = directory.entryInfoList();
+
+    beginInsertRows(QModelIndex(), 0, fileList.length()-3);
+    for(int i = 0; i < fileList.length(); i++) {
+        if(fileList[i].fileName() == "." || fileList[i].fileName() == "..") {
+            fileList.removeAt(i);
+            i = 0;
+        }
+        else {
+            FilesDelegate * delegate = new FilesDelegate();
+
+            delegate->setName(fileList[i].fileName());
+            delegate->setIconName(KIO::iconNameForUrl(QUrl::fromLocalFile(fileList[i].absoluteFilePath())));
+            delegate->setMimeType(getMimeType(fileList[i].absoluteFilePath()));
+            delegate->setPath(fileList[i].absoluteFilePath());
+            delegate->setModifiedDate(fileList[i].lastModified().toString());
+            delegate->setSize(fileList[i].isDir() ? "" : QString::number(fileList[i].size()/1024) + " KB");
+            delegate->setHidden(fileList[i].isHidden());
+            delegate->setEmblemName(getEmblem(fileList[i]));
+
+            m_files.append(delegate);
+        }
+    }
+    endInsertRows();
 }
 
 void FilesModel::setCurrentDir(const QString &newDir)
@@ -140,43 +189,6 @@ QStringList FilesModel::history(const int &type)
     return QStringList();
 }
 
-void FilesModel::getFiles()
-{
-    beginResetModel();
-    m_files.clear();
-    endResetModel();
-
-    QDir directory(m_currentDir);
-
-    m_currentDirIcon = KIO::iconNameForUrl(QUrl::fromLocalFile(directory.absolutePath()));
-
-    directory.setSorting(QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
-    directory.setFilter(QDir::AllEntries | QDir::Hidden);
-    QList<QFileInfo> fileList = directory.entryInfoList();
-
-    beginInsertRows(QModelIndex(), 0, fileList.length()-3);
-    for(int i = 0; i < fileList.length(); i++) {
-        if(fileList[i].fileName() == "." || fileList[i].fileName() == "..") {
-            fileList.removeAt(i);
-            i = 0;
-        }
-        else {
-            FilesDelegate * delegate = new FilesDelegate();
-
-            delegate->setName(fileList[i].fileName());
-            delegate->setIconName(KIO::iconNameForUrl(QUrl::fromLocalFile(fileList[i].absoluteFilePath())));
-            delegate->setMimeType(getMimeType(fileList[i].absoluteFilePath()));
-            delegate->setPath(fileList[i].absoluteFilePath());
-            delegate->setModifiedDate(fileList[i].lastModified().toString());
-            delegate->setSize(fileList[i].isDir() ? "" : QString::number(fileList[i].size()/1024) + " KB");
-            delegate->setHidden(fileList[i].isHidden());
-
-            m_files.append(delegate);
-        }
-    }
-    endInsertRows();
-}
-
 void FilesModel::trigger(const int &index)
 {
     if(index < 0 && index > m_files.length())
@@ -210,6 +222,7 @@ QHash<int, QByteArray> FilesModel::roleNames() const {
     roles[ModifiedRole] = "modifiedDate";
     roles[SizeRole] = "size";
     roles[HiddenRole] = "isHidden";
+    roles[EmblemNameRole] = "emblemName";
 
     return roles;
 }

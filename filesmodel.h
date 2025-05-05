@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QAbstractListModel>
+#include <QDir>
 
 class FilesDelegate : public QObject
 {
@@ -32,6 +33,9 @@ public:
     bool isHidden() { return m_isHidden; }
     void setHidden(const bool &isHidden) { m_isHidden = isHidden; }
 
+    QString emblemName() { return m_emblemName; }
+    void setEmblemName(const QString &newEmblem) { m_emblemName = newEmblem; }
+
 private:
     QString m_name;
     QString m_iconName;
@@ -40,6 +44,7 @@ private:
     QString m_modifiedDate;
     QString m_size;
     bool m_isHidden;
+    QString m_emblemName;
 
 };
 
@@ -64,7 +69,8 @@ public:
         PathRole,
         ModifiedRole,
         SizeRole,
-        HiddenRole
+        HiddenRole,
+        EmblemNameRole
     };
 
     virtual int rowCount(const QModelIndex &parent) const override;
@@ -88,6 +94,7 @@ public:
     Q_INVOKABLE QStringList history(const int &type);
 
     QString getMimeType(const QString &filePath);
+    QString getEmblem(const QFileInfo &file);
     void getFiles();
 
     Q_INVOKABLE void trigger(const int &index);
