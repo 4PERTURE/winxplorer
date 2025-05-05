@@ -1,0 +1,34 @@
+<RCC>
+    <qresource prefix="/">
+        <file>aero/commandBar/btn-hover.png</file>
+        <file>aero/commandBar/btn-pressed.png</file>
+        <file>aero/commandBar/shine.png</file>
+        <file>aero/back.png</file>
+        <file>aero/commandBarBtn.png</file>
+        <file>aero/commandBarBtnLeft.png</file>
+        <file>aero/commandBarBtnRight.png</file>
+        <file>aero/detailsShadow.png</file>
+        <file>aero/forward.png</file>
+        <file>aero/fileView/item-hover.png</file>
+        <file>aero/fileView/item-selected-hover.png</file>
+        <file>aero/fileView/item-selected.png</file>
+        <file>aero/fileView/header/background.png</file>
+        <file>aero/glassArea/navButtons/back/disabled.png</file>
+        <file>aero/glassArea/navButtons/back/hover.png</file>
+        <file>aero/glassArea/navButtons/back/normal.png</file>
+        <file>aero/glassArea/navButtons/back/pressed.png</file>
+        <file>aero/glassArea/navButtons/forward/disabled.png</file>
+        <file>aero/glassArea/navButtons/forward/hover.png</file>
+        <file>aero/glassArea/navButtons/forward/normal.png</file>
+        <file>aero/glassArea/navButtons/forward/pressed.png</file>
+        <file>aero/fileView/header/item-normal.png</file>
+        <file>aero/fileView/header/item-selected.png</file>
+        <file>aero/glassArea/addressBar/disabled.png</file>
+        <file>aero/glassArea/addressBar/hover.png</file>
+        <file>aero/glassArea/addressBar/normal.png</file>
+        <file>aero/glassArea/navButtons/disabled.png</file>
+        <file>aero/glassArea/navButtons/hover.png</file>
+        <file>aero/glassArea/navButtons/normal.png</file>
+        <file>aero/glassArea/navButtons/pressed.png</file>
+    </qresource>
+</RCC>
