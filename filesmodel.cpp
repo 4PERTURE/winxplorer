@@ -10,6 +10,23 @@ FilesModel::FilesModel(QObject *parent)
     : QAbstractListModel{parent}
 {
     connect(this, &FilesModel::refresh, this, &FilesModel::getFiles);
+
+    m_currentDir = new QDir();
+    m_watcher = new QFileSystemWatcher();
+
+    connect(m_watcher, &QFileSystemWatcher::fileChanged, this, &FilesModel::getFiles);
+    connect(m_watcher, &QFileSystemWatcher::directoryChanged, this, &FilesModel::getFiles);
+}
+
+// idk if this works lmao
+FilesModel::~FilesModel()
+{
+    // or if this disconnection part is necessary
+    disconnect(m_watcher, &QFileSystemWatcher::fileChanged, this, &FilesModel::getFiles);
+    disconnect(m_watcher, &QFileSystemWatcher::directoryChanged, this, &FilesModel::getFiles);
+
+    delete m_currentDir;
+    delete m_watcher;
 }
 
 int FilesModel::rowCount(const QModelIndex &parent) const
@@ -49,7 +66,7 @@ QVariant FilesModel::data(const QModelIndex &index, int role) const
 
 QString FilesModel::currentDir()
 {
-    return m_currentDir;
+    return m_currentDir->absolutePath();
 }
 
 QString FilesModel::getMimeType(const QString &filePath)
@@ -75,13 +92,16 @@ void FilesModel::getFiles()
     m_files.clear();
     endResetModel();
 
-    QDir directory(m_currentDir);
+    m_currentDir->setSorting(QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
+    m_currentDir->setFilter(QDir::AllEntries | QDir::Hidden);
 
-    m_currentDirIcon = KIO::iconNameForUrl(QUrl::fromLocalFile(directory.absolutePath()));
+    QList<QFileInfo> fileList = m_currentDir->entryInfoList();
 
-    directory.setSorting(QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
-    directory.setFilter(QDir::AllEntries | QDir::Hidden);
-    QList<QFileInfo> fileList = directory.entryInfoList();
+    if(m_watcher->files().count() > 0) {
+        for(int i = 0; i < m_watcher->files().count(); i++) {
+            m_watcher->removePath(m_watcher->files().at(i));
+        }
+    }
 
     beginInsertRows(QModelIndex(), 0, fileList.length()-3);
     for(int i = 0; i < fileList.length(); i++) {
@@ -90,6 +110,8 @@ void FilesModel::getFiles()
             i = 0;
         }
         else {
+            m_watcher->addPath(fileList[i].absoluteFilePath());
+
             FilesDelegate * delegate = new FilesDelegate();
 
             delegate->setName(fileList[i].fileName());
@@ -112,20 +134,20 @@ void FilesModel::setCurrentDir(const QString &newDir)
     m_canGoBack = m_backHistory.length() > 0;
     m_canGoForward = m_forwardHistory.length() > 0;
 
-    m_currentDir = newDir;
-    m_canGoUp = m_currentDir != "/";
+    m_currentDir->setPath(newDir);
+    m_canGoUp = m_currentDir->absolutePath() != "/";
     emit refresh();
 }
 
 QString FilesModel::currentDirIcon()
 {
-    return m_currentDirIcon;
+    return KIO::iconNameForUrl(QUrl::fromLocalFile(m_currentDir->absolutePath()));
 }
 
 void FilesModel::goBack()
 {
     if(m_canGoBack) {
-        const QString previousDir = m_currentDir;
+        const QString previousDir = m_currentDir->absolutePath();
         setCurrentDir(m_backHistory.at(m_backHistory.length()-1));
         m_backHistory.remove(m_backHistory.length()-1);
         m_forwardHistory.append(previousDir);
@@ -143,7 +165,7 @@ bool FilesModel::canGoBack()
 void FilesModel::goForward()
 {
     if(m_canGoForward) {
-        const QString previousDir = m_currentDir;
+        const QString previousDir = m_currentDir->absolutePath();
         setCurrentDir(m_forwardHistory.at(m_forwardHistory.length()-1));
         m_forwardHistory.remove(m_forwardHistory.length()-1);
         m_backHistory.append(previousDir);
@@ -161,18 +183,16 @@ bool FilesModel::canGoForward()
 void FilesModel::goUp()
 {
     if(m_canGoUp) {
-        QDir currentDir(m_currentDir);
-
         m_backHistory.clear();
-        m_forwardHistory.append(currentDir.absolutePath());
+        m_forwardHistory.append(m_currentDir->absolutePath());
 
         m_canGoBack = m_backHistory.length() > 0;
         m_canGoForward = m_forwardHistory.length() > 0;
 
-        currentDir.cdUp();
-        setCurrentDir(currentDir.absolutePath());
+        m_currentDir->cdUp();
+        setCurrentDir(m_currentDir->absolutePath());
 
-        m_canGoUp = m_currentDir != "/";
+        m_canGoUp = m_currentDir->absolutePath() != "/";
     }
 }
 
@@ -203,6 +223,19 @@ void FilesModel::trigger(const int &index)
                 m_canGoForward = m_forwardHistory.length() > 0;
             }
         }
+
+        // There might be a better way to do this
+        if(m_history.length() > 0) {
+            bool dirToHistory = false;
+
+            for(int i = 0; i < m_history.length(); i++)
+                dirToHistory = m_history.at(i) != file.absolutePath();
+
+            if(dirToHistory)
+                m_history.emplaceFront(file.absolutePath());
+        }
+        else
+            m_history.append(file.absolutePath());
 
         m_backHistory.append(file.absolutePath());
 

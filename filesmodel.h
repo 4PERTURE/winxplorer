@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QAbstractListModel>
 #include <QDir>
+#include <QFileSystemWatcher>
 
 class FilesDelegate : public QObject
 {
@@ -105,8 +106,8 @@ signals:
 private:
     QList<FilesDelegate*> m_files;
 
-    QString m_currentDir;
-    QString m_currentDirIcon;
+    QDir *m_currentDir;
+    QFileSystemWatcher *m_watcher;
 
     bool m_canGoBack;
     bool m_canGoForward;

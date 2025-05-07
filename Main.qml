@@ -3,6 +3,8 @@ import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 
 import org.kde.kirigami as Kirigami
+import org.kde.plasma.extras as PlasmaExtras
+import org.kde.plasma.core as PlasmaCore
 
 import Controls as Controls
 import Panes as Panes
@@ -95,7 +97,23 @@ Window {
         spacing: 0
 
         Image {
-            readonly property string state: "disabled"
+            id: navigationBtns
+
+            property list<string> history: []
+            readonly property string state: {
+                if(history.length > 0) {
+                    if(historyMa.containsPress || listMenu.opened) return "pressed";
+                    if(historyMa.containsMouse) return "hover";
+                    return "normal"
+                } else return "disabled";
+            }
+
+            Connections {
+                target: FilesModel
+                function onRefresh() {
+                    navigationBtns.history = Qt.binding(() => FilesModel.history(2));
+                }
+            }
 
             source: "qrc:/aero/glassArea/navButtons/" + state + ".png"
 
@@ -109,6 +127,144 @@ Window {
                 height: 23
 
                 hoverEnabled: true
+                onClicked: listMenu.open()
+
+                QQC2.Menu {
+                    id: listMenu
+
+                    width: 234
+                    height: listMenuView.contentHeight + 12
+
+                    y: historyMa.height
+
+                    contentItem: ListView {
+                        id: listMenuView
+
+                        anchors {
+                            fill: parent
+                            topMargin: 2
+                            bottomMargin: 12
+                            leftMargin: 2
+                            rightMargin: 10
+                        }
+
+                        spacing: 2
+                        model: navigationBtns.history.length
+                        delegate: Item {
+                            id: itemRoot
+
+                            required property int index
+
+                            width: parent.width
+                            height: 19
+
+                            Item {
+                                id: normalItem
+
+                                anchors.fill: parent
+
+                                BorderImage {
+                                    anchors.fill: parent
+
+                                    border {
+                                        top: 2
+                                        bottom: 3
+                                        right: 3
+                                        left: 3
+                                    }
+                                    source: "qrc:/aero/fileView/item-hover.png"
+
+                                    visible: itemMa.containsMouse
+                                }
+
+                                Text {
+                                    anchors {
+                                        right: parent.right
+                                        left: parent.left
+                                        leftMargin: 28
+
+                                        verticalCenter: parent.verticalCenter
+                                    }
+
+                                    text: navigationBtns.history[index]
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                MouseArea {
+                                    id: itemMa
+
+                                    anchors.fill: parent
+
+                                    hoverEnabled: true
+                                    preventStealing: true
+                                    propagateComposedEvents: true
+                                    onClicked: {
+                                        listMenu.close();
+                                        FilesModel.currentDir = navigationBtns.history[index];
+                                    }
+
+                                    z: 1
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            anchors {
+                                top: parent.top
+                                bottom: parent.bottom
+                                bottomMargin: -2
+                                left: parent.left
+                                leftMargin: 22
+                            }
+
+                            width: 1
+
+                            color: "#e2e2e2"
+
+                            z: -1
+                        }
+                        Rectangle {
+                            anchors {
+                                top: parent.top
+                                bottom: parent.bottom
+                                bottomMargin: -2
+                                left: parent.left
+                                leftMargin: 23
+                            }
+
+                            width: 1
+
+                            color: "#fefefe"
+
+                            z: -1
+                        }
+                    }
+
+                    background: Kirigami.ShadowedRectangle {
+                        anchors {
+                            fill: parent
+                            rightMargin: 8
+                            bottomMargin: 8
+                        }
+                        radius: 0
+                        color: "white"
+
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: 2
+
+                            color: "#efefef"
+                        }
+
+                        border.color: "#a6a6a6"
+                        border.width: 1
+
+                        shadow.xOffset: 1
+                        shadow.yOffset: 1
+                        shadow.color: Qt.rgba(0, 0, 0, 0.3)
+                        shadow.size: 4
+                    }
+                }
             }
 
             Row {

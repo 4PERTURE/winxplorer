@@ -27,9 +27,6 @@ Item {
             right: parent.right
         }
 
-        implicitWidth: columns.rowWidth
-        implicitHeight: listView.height
-
         hoverEnabled: true
 
         Keys.onPressed: event => {
@@ -92,6 +89,8 @@ Item {
                         }
                     }
                 }
+
+                contentWidth: columns.columnsWidth
 
                 Timer {
                     id: resetSearchStr
