@@ -30,5 +30,6 @@
         <file>aero/glassArea/navButtons/hover.png</file>
         <file>aero/glassArea/navButtons/normal.png</file>
         <file>aero/glassArea/navButtons/pressed.png</file>
+        <file>aero/navStart.wav</file>
     </qresource>
 </RCC>

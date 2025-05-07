@@ -5,6 +5,7 @@
 #include <QAbstractListModel>
 #include <QDir>
 #include <QFileSystemWatcher>
+#include <QMediaPlayer>
 
 class FilesDelegate : public QObject
 {
@@ -62,6 +63,7 @@ class FilesModel : public QAbstractListModel
 
 public:
     explicit FilesModel(QObject *parent = nullptr);
+    ~FilesModel();
 
     enum FileRole {
         NameRole,
@@ -108,6 +110,8 @@ private:
 
     QDir *m_currentDir;
     QFileSystemWatcher *m_watcher;
+
+    QMediaPlayer *m_navigationSound;
 
     bool m_canGoBack;
     bool m_canGoForward;

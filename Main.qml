@@ -23,7 +23,7 @@ Window {
         function onRefresh() {
             addressBar.text.text = FilesModel.currentDir;
             addressBar.icon = Qt.binding(() => FilesModel.currentDirIcon);
-            updateDetailsIcon.start();
+            detailsPane.updateDetailsIcon.start();
             updateAddressBarIcon.start();
         }
     }
@@ -396,10 +396,36 @@ Window {
     ColumnLayout {
         id: innerContents
 
+        property alias filesPane: filesPane
+
         anchors.fill: innerRect
         anchors.margins: 2
 
         spacing: 0
+
+        component PaneSeparator: Item {
+            implicitWidth: 2
+
+            Rectangle {
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+
+                width: 2
+
+                color: "#a7bac5"
+            }
+
+            Rectangle {
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+
+                width: 1
+
+                color: "white"
+            }
+        }
 
         Controls.CommandBar { id: commandBar; Layout.fillWidth: true }
 
@@ -416,26 +442,6 @@ Window {
                 Layout.maximumWidth: 160
                 Layout.fillHeight: true
 
-                Rectangle {
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-
-                    width: 2
-
-                    color: "#a7bac5"
-                }
-
-                Rectangle {
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-
-                    width: 1
-
-                    color: "white"
-                }
-
                 Text {
                     anchors.top: parent.top
                     anchors.left: parent.left
@@ -445,71 +451,10 @@ Window {
                     opacity: 0.5
                 }
             }
-
+            PaneSeparator { Layout.fillHeight: true }
             Panes.Files { id: filesPane; Layout.fillWidth: true; Layout.fillHeight: true }
         }
         Rectangle { Layout.fillWidth: true; Layout.minimumHeight: 1; color: "#9db6c5" }
-        Item {
-            id: detailsPane
-
-            Layout.fillWidth: true
-            Layout.minimumHeight: 70
-            Layout.maximumHeight: 70
-
-            Rectangle {
-                anchors.fill: parent
-
-                gradient: Gradient {
-                    orientation: Gradient.Horizontal
-                    GradientStop { position: 1.0; color: "#bbd9f0" }
-                    GradientStop { position: 0.0; color: "#f3fbfe" }
-                }
-            }
-
-            BorderImage {
-                anchors.fill: parent
-
-                border {
-                    top: 6
-                    bottom: 0
-                    left: 1
-                    right: 1
-                }
-                source: "qrc:/aero/detailsShadow.png"
-            }
-
-            Row {
-                spacing: 15
-
-                anchors {
-                    bottom: parent.bottom
-                    left: parent.left
-                    leftMargin: 4
-                    right: parent.right
-                    rightMargin: 4
-                }
-
-                Kirigami.Icon {
-                    id: icon
-
-                    width: 64
-                    height: width
-
-                    Timer {
-                        id: updateDetailsIcon
-
-                        interval: 50
-                        onTriggered: icon.source = FilesModel.currentDirIcon
-                    }
-                }
-
-                Text {
-                    anchors.top: parent.top
-
-                    text: filesPane.count + " elements"
-                    font.pointSize: 10
-                }
-            }
-        }
+        Panes.Details { id: detailsPane; Layout.fillWidth: true }
     }
 }

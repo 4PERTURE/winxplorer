@@ -68,6 +68,8 @@ Item {
         // put the listview inside a scrollview to get rid of the
         // flicking and forced smooth scrolling
         QQC2.ScrollView {
+            id: listScrollView
+
             anchors.fill: parent
 
             readonly property real scrollBarWidth: QQC2.ScrollBar.vertical.visible ? QQC2.ScrollBar.vertical.width : 0
@@ -119,7 +121,7 @@ Item {
                     required property var model
                     required property int index
 
-                    width: paneRoot.width - ListView.view.parent.scrollBarWidth
+                    width: paneRoot.width - listScrollView.scrollBarWidth
                     height: 19
 
                     hoverEnabled: true
@@ -136,10 +138,6 @@ Item {
                                 if(parent.containsMouse) return "-selected-hover";
                                 return "-selected"
                             } else return "-hover";
-
-                            // var basePrefix = listView.currentIndex == index ? "-selected" : ""
-                            // if(parent.containsMouse) basePrefix += "-hover";
-                            // return basePrefix;
                         }
 
                         anchors.fill: parent
@@ -152,7 +150,7 @@ Item {
                         }
                         source: "qrc:/aero/fileView/item" + state + ".png"
 
-                        visible: listView.currentIndex == index || parent.containsMouse
+                        visible: listView.currentIndex == fileRoot.index || parent.containsMouse
                     }
 
                     RowLayout {
@@ -184,9 +182,9 @@ Item {
                                 implicitWidth: 16
                                 implicitHeight: implicitWidth
 
-                                source: model.iconName
+                                source: fileRoot.model.iconName
 
-                                opacity: model.isHidden ? 0.5 : 1.0
+                                opacity: fileRoot.model.isHidden ? 0.5 : 1.0
 
                                 Kirigami.Icon {
                                     anchors.bottom: parent.bottom
@@ -194,7 +192,7 @@ Item {
                                     width: 8
                                     height: width
 
-                                    source: model.emblemName
+                                    source: fileRoot.model.emblemName
                                 }
                             }
                             Text {
@@ -202,7 +200,7 @@ Item {
 
                                 wrapMode: Text.NoWrap
                                 elide: Text.ElideRight
-                                text: model.name
+                                text: fileRoot.model.name
                             }
                         }
 
@@ -222,7 +220,7 @@ Item {
 
                             wrapMode: Text.NoWrap
                             elide: Text.ElideRight
-                            text: model.mimeType
+                            text: fileRoot.model.mimeType
 
                             opacity: 0.5
                         }
@@ -232,7 +230,7 @@ Item {
 
                             readonly property int dateColumnWidth: {
                                 for(var i = 0; i < columns.columns.count; i++) {
-                                    if(columns.columns.get(i).name === "Modified date")
+                                    if(columns.columns.get(i).name === "Date modified")
                                         return columns.columns.get(i).width;
                                 }
                             }
@@ -243,7 +241,7 @@ Item {
 
                             wrapMode: Text.NoWrap
                             elide: Text.ElideRight
-                            text: model.modifiedDate
+                            text: fileRoot.model.modifiedDate
 
                             opacity: 0.5
                         }
@@ -264,7 +262,7 @@ Item {
 
                             wrapMode: Text.NoWrap
                             elide: Text.ElideRight
-                            text: model.size
+                            text: fileRoot.model.size
 
                             opacity: 0.5
                         }

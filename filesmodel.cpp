@@ -3,6 +3,7 @@
 #include <QMimeDatabase>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QAudioOutput>
 
 #include <KF6/KIOCore/kio/global.h>
 
@@ -12,10 +13,15 @@ FilesModel::FilesModel(QObject *parent)
     connect(this, &FilesModel::refresh, this, &FilesModel::getFiles);
 
     m_currentDir = new QDir();
-    m_watcher = new QFileSystemWatcher();
 
+    m_watcher = new QFileSystemWatcher();
     connect(m_watcher, &QFileSystemWatcher::fileChanged, this, &FilesModel::getFiles);
     connect(m_watcher, &QFileSystemWatcher::directoryChanged, this, &FilesModel::getFiles);
+
+    m_navigationSound = new QMediaPlayer();
+    m_navigationSound->setSource(QUrl("qrc:/aero/navStart.wav"));
+    QAudioOutput *audioOutput = new QAudioOutput();
+    m_navigationSound->setAudioOutput(audioOutput);
 }
 
 // idk if this works lmao
@@ -27,6 +33,9 @@ FilesModel::~FilesModel()
 
     delete m_currentDir;
     delete m_watcher;
+
+    delete m_navigationSound->audioOutput();
+    delete m_navigationSound;
 }
 
 int FilesModel::rowCount(const QModelIndex &parent) const
@@ -135,6 +144,8 @@ void FilesModel::setCurrentDir(const QString &newDir)
     m_canGoForward = m_forwardHistory.length() > 0;
 
     m_currentDir->setPath(newDir);
+    m_navigationSound->play();
+
     m_canGoUp = m_currentDir->absolutePath() != "/";
     emit refresh();
 }

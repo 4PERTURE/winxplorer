@@ -4,10 +4,11 @@ project(winxplorer6 VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTORCC ON)
+set(QT_QML_GENERATE_QMLLS_INI ON)
 
 find_package(KF6WindowSystem)
 find_package(KF6KIO)
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Quick)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Quick Multimedia)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
@@ -22,13 +23,16 @@ qt_add_qml_module(winxplorer
         Main.qml
         RESOURCES aero.qrc
         SOURCES filesmodel.h filesmodel.cpp
+    DEPENDENCIES
+        Controls
+        Panes
 )
 
 add_subdirectory(controls/)
 add_subdirectory(panes/)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
+# If you are developing for iOS or macOS you should con sider setting an
 # explicit, fixed bundle identifier manually though.
 set_target_properties(winxplorer PROPERTIES
 #    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.winxplorer
@@ -43,6 +47,7 @@ target_link_libraries(winxplorer
         Qt6::Quick
         Qt6::Core
         Qt6::Widgets
+        Qt6::Multimedia
 
         Controlsplugin Panesplugin
     PUBLIC

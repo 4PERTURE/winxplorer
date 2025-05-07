@@ -23,7 +23,7 @@ Item {
             width: 110
         }
         ListElement {
-            name: "Modified date"
+            name: "Date modified"
             width: 180
         }
         ListElement {
@@ -58,6 +58,8 @@ Item {
         Repeater {
             model: columns
             delegate: Item {
+                id: columnRoot
+
                 required property int index
                 required property var model
 
@@ -81,7 +83,7 @@ Item {
 
                     verticalAlignment: Text.AlignVCenter
                     leftPadding: 6
-                    text: model.name
+                    text: columnRoot.model.name
                 }
             }
         }
