@@ -5,18 +5,13 @@
 
 #include <KF6/KWindowSystem/kwindoweffects.h>
 
-#include "filesmodel.h"
+#include "filesbackend.h"
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    qmlRegisterSingletonType<FilesModel>("io.gitgud.catpswin56.private.filesmodel", 1, 0, "FilesModel",
-                                        [] (QQmlEngine *engine, QJSEngine *scriptEngine) -> QObject * {
-                                            static auto * provider = new FilesModel();
-                                            return provider;
-                                        }
-                                        );
+    qmlRegisterType<FilesBackend::FilesModel>("io.gitgud.catpswin56.private.filesbackend", 1, 0, "FilesModel");
 
     Q_IMPORT_QML_PLUGIN(ControlsPlugin)
     Q_IMPORT_QML_PLUGIN(PanesPlugin)

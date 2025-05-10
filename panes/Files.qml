@@ -8,18 +8,10 @@ import org.kde.kirigami as Kirigami
 
 import Controls as Controls
 
-import io.gitgud.catpswin56.private.filesmodel
-
 Item {
     id: paneRoot
 
     readonly property int count: listView.count
-
-    Component {
-        id: columns
-
-        Controls.FileColumns {  }
-    }
 
     MouseArea {
         id: viewArea
@@ -31,18 +23,18 @@ Item {
         Keys.onPressed: event => {
             switch(event.key) {
                 case(Qt.Key_Up):
-                    if(listView.currentIndex > 0) listView.currentIndex--;
-                    else listView.currentIndex = listView.count-1;
+                    if(listView.selectedIndex > 0) listView.selectedIndex--;
+                    else listView.selectedIndex = listView.count-1;
                     break;
                 case(Qt.Key_Down):
-                    if(listView.currentIndex < listView.count-1) listView.currentIndex++;
-                    else listView.currentIndex = 0;
+                    if(listView.selectedIndex < listView.count-1) listView.selectedIndex++;
+                    else listView.selectedIndex = 0;
                     break;
                 case(Qt.Key_Return):
-                    FilesModel.trigger(listView.currentItem.index);
+                    filesModel.trigger(listView.currentItem.index);
                     break;
                 case(Qt.Key_Backspace):
-                    FilesModel.goUp();
+                    filesModel.goUp();
                     break;
                 default:
                     if(event.text !== "") listView.searchStr += event.text;
@@ -50,10 +42,49 @@ Item {
             }
         }
 
+        Row {
+            id: separatorLines
+
+            anchors.fill: parent
+
+            Repeater {
+                model: listView.headerItem.count
+                delegate: Item {
+                    required property int index
+
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+
+                    width: listView.headerItem.columns.get(index).width
+
+                    Row {
+                        anchors {
+                            top: parent.top
+                            bottom: parent.bottom
+                            right: parent.right
+                        }
+
+                        Rectangle {
+                            width: 1
+                            height: parent.height
+
+                            color: "#ededed"
+                        }
+                        Rectangle {
+                            width: 1
+                            height: parent.height
+
+                            color: "white"
+                        }
+                    }
+                }
+            }
+        }
+
         Text {
             anchors {
                 top: parent.top
-                topMargin: 16
+                topMargin: 16 + listView.headerItem.height
 
                 horizontalCenter: parent.horizontalCenter
             }
@@ -99,17 +130,14 @@ Item {
                     if(searchStr !== "") {
                         for(var i = 0; i < count; i++) {
                             var file = listView.itemAtIndex(i);
-                            if(FilesModel.data(FilesModel.index(i, 0), 0).slice(0, searchStr.length).toLowerCase() == searchStr) {
-                                currentIndex = file.index;
-                                positionViewAtIndex(currentIndex, ListView.Contain);
+                            if(filesModel.data(filesModel.index(i, 0), 0).slice(0, searchStr.length).toLowerCase() == searchStr) {
+                                selectedIndex = file.index;
+                                positionViewAtIndex(selectedIndex, ListView.Contain);
                                 return;
                             }
                         }
                     }
                 }
-
-                contentWidth: headerItem.columnsWidth
-
                 Timer {
                     id: resetSearchStr
 
@@ -117,18 +145,37 @@ Item {
                     onTriggered: listView.searchStr = "";
                 }
 
-                property list<int> selectedIndexes: []
+                property int selectedIndex: -1
+                Binding {
+                    target: listView
+                    property: "currentIndex"
+                    value: listView.selectedIndex
+                    restoreMode: Binding.RestoreValue
+                }
 
-                currentIndex: -1
+                //property list<int> selectedIndexes: []
+
+                contentWidth: headerItem.columnsWidth
+
+                Connections {
+                    target: filesModel
+
+                    function onCurrentDirChanged() {
+                        listView.selectedIndex = -1;
+                    }
+                }
+
+                currentIndex: selectedIndex
                 onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+                onCountChanged: positionViewAtIndex(currentIndex, ListView.Contain)
                 spacing: 1
                 highlightMoveVelocity: 0
                 highlightMoveDuration: 0
                 maximumFlickVelocity: 0
-                model: FilesModel
+                model: filesModel
                 clip: true
                 reuseItems: true
-                header: columns
+                header: Controls.FileColumns { id: columns }
                 headerPositioning: ListView.OverlayHeader
                 pressDelay: 0
                 boundsBehavior: Flickable.StopAtBounds
@@ -146,17 +193,17 @@ Item {
 
                     onClicked: {
                         viewArea.forceActiveFocus();
-                        listView.currentIndex = model.index;
+                        listView.selectedIndex = model.index;
                     }
                     onDoubleClicked: {
                         viewArea.forceActiveFocus();
-                        listView.currentIndex = model.index;
-                        FilesModel.trigger(index);
+                        listView.selectedIndex = model.index;
+                        filesModel.trigger(index);
                     }
 
                     BorderImage {
                         readonly property string state: {
-                            if(listView.currentIndex == parent.index) {
+                            if(listView.selectedIndex == parent.index) {
                                 if(parent.containsMouse) return "-selected-hover";
                                 return "-selected"
                             } else return "-hover";
@@ -172,7 +219,7 @@ Item {
                         }
                         source: "qrc:/aero/fileView/item" + state + ".png"
 
-                        visible: listView.currentIndex == fileRoot.index || parent.containsMouse
+                        visible: listView.selectedIndex == fileRoot.index || parent.containsMouse
                     }
 
                     RowLayout {
@@ -183,6 +230,8 @@ Item {
 
                             verticalCenter: parent.verticalCenter
                         }
+
+                        spacing: 10
 
                         RowLayout {
                             id: name
@@ -243,8 +292,6 @@ Item {
                             wrapMode: Text.NoWrap
                             elide: Text.ElideRight
                             text: fileRoot.model.mimeType
-
-                            opacity: 0.5
                         }
 
                         Text {
@@ -264,8 +311,6 @@ Item {
                             wrapMode: Text.NoWrap
                             elide: Text.ElideRight
                             text: fileRoot.model.modifiedDate
-
-                            opacity: 0.5
                         }
 
                         Text {
@@ -285,19 +330,10 @@ Item {
                             wrapMode: Text.NoWrap
                             elide: Text.ElideRight
                             text: fileRoot.model.size
-
-                            opacity: 0.5
+                            horizontalAlignment: Text.AlignRight
                         }
 
                         Item { Layout.fillWidth: true }
-                    }
-                }
-
-                Connections {
-                    target: FilesModel
-                    function onCurrentDirChanged() {
-                        listView.currentIndex = -1;
-                        listView.selectedIndexes = [];
                     }
                 }
             }

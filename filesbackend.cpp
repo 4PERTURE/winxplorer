@@ -1,4 +1,4 @@
-#include "filesmodel.h"
+#include "filesbackend.h"
 
 #include <QDesktopServices>
 #include <QUrl>
@@ -6,22 +6,24 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QFuture>
 
+using namespace FilesBackend;
+
 FilesModel::FilesModel(QObject *parent)
     : QAbstractListModel{parent}
 {
     connect(this, &FilesModel::refresh, this, &FilesModel::refreshFileList);
 
     m_currentDir = new QDir();
-
     m_currentDir->setSorting(QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
     m_currentDir->setFilter(QDir::AllEntries | QDir::Hidden);
 
     m_watcher = new QFileSystemWatcher();
+    // TODO: make this refresh a single entry instead of the whole list
     connect(m_watcher, &QFileSystemWatcher::fileChanged, this, &FilesModel::refreshFileList);
     connect(m_watcher, &QFileSystemWatcher::directoryChanged, this, &FilesModel::refreshFileList);
 
     m_navigationSound = new QMediaPlayer();
-    m_navigationSound->setSource(QUrl("qrc:/aero/navStart.wav"));
+    m_navigationSound->setSource(QUrl("qrc:/aero/misc/navStart.wav"));
     QAudioOutput *audioOutput = new QAudioOutput();
     m_navigationSound->setAudioOutput(audioOutput);
 }
@@ -130,6 +132,7 @@ void FilesModel::setCurrentDir(const QString &newDir)
 
     m_currentDir->setPath(newDir);
     m_navigationSound->play();
+    emit currentDirChanged();
 
     m_canGoUp = m_currentDir->absolutePath() != "/";
     emit refresh();
@@ -256,4 +259,4 @@ QHash<int, QByteArray> FilesModel::roleNames() const {
     return roles;
 }
 
-#include "moc_filesmodel.cpp"
+#include "moc_filesbackend.cpp"

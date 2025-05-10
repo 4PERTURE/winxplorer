@@ -7,6 +7,7 @@ Item {
 
     readonly property alias columns: columns
     readonly property alias columnsWidth: columnsRow.width
+    readonly property alias count: columns.count
 
     implicitWidth: parent.width
     implicitHeight: 24
@@ -65,7 +66,7 @@ Item {
                         left: 2
                         right: 2
                     }
-                    source: "qrc:/aero/fileView/header/item-normal.png"
+                    source: parent.index == 0 ? "qrc:/aero/fileView/header/item-normal-first.png" : "qrc:/aero/fileView/header/item-normal.png"
                 }
 
                 Text {

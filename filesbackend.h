@@ -1,5 +1,5 @@
-#ifndef FILESMODEL_H
-#define FILESMODEL_H
+#ifndef FILESBACKEND_H
+#define FILESBACKEND_H
 
 #include <QObject>
 #include <QAbstractListModel>
@@ -10,6 +10,9 @@
 #include <QMimeDatabase>
 
 #include <KF6/KIOCore/kio/global.h>
+
+namespace FilesBackend
+{
 
 struct FileDelegate {
     QString name;
@@ -94,8 +97,8 @@ class FilesModel : public QAbstractListModel
 {
     Q_OBJECT
 
-    Q_PROPERTY(QString currentDir READ currentDir WRITE setCurrentDir NOTIFY refresh)
-    Q_PROPERTY(QString currentDirIcon READ currentDirIcon NOTIFY refresh)
+    Q_PROPERTY(QString currentDir READ currentDir WRITE setCurrentDir NOTIFY currentDirChanged)
+    Q_PROPERTY(QString currentDirIcon READ currentDirIcon NOTIFY currentDirChanged)
 
     Q_PROPERTY(bool canGoBack READ canGoBack NOTIFY refresh)
     Q_PROPERTY(bool canGoForward READ canGoForward NOTIFY refresh)
@@ -115,6 +118,7 @@ public:
         HiddenRole,
         EmblemNameRole
     };
+    Q_ENUM(FileRole)
 
     virtual int rowCount(const QModelIndex &parent) const override;
     virtual QVariant data(const QModelIndex &index, int role) const override;
@@ -144,6 +148,7 @@ public slots:
 
 signals:
     Q_INVOKABLE void refresh();
+    void currentDirChanged();
 
 private:
     FileFetcherThread *m_loadingThread = nullptr;
@@ -163,5 +168,5 @@ private:
     QStringList m_forwardHistory;
     QStringList m_backHistory;
 };
-
-#endif // FILESMODEL_H
+}
+#endif // FILESBACKEND_H

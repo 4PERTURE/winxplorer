@@ -3,12 +3,8 @@ import QtQuick.Layouts
 
 import org.kde.kirigami as Kirigami
 
-import io.gitgud.catpswin56.private.filesmodel
-
 Item {
     id: detailsPane
-
-    property alias updateDetailsIcon: updateDetailsIcon
 
     implicitHeight: 70
 
@@ -31,7 +27,7 @@ Item {
             left: 1
             right: 1
         }
-        source: "qrc:/aero/detailsShadow.png"
+        source: "qrc:/aero/misc/detailsShadow.png"
     }
 
     Row {
@@ -51,12 +47,7 @@ Item {
             width: 64
             height: width
 
-            Timer {
-                id: updateDetailsIcon
-
-                interval: 50
-                onTriggered: icon.source = FilesModel.currentDirIcon
-            }
+            source: filesModel.currentDirIcon
         }
 
         Text {

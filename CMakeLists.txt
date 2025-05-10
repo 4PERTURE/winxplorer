@@ -2,13 +2,18 @@ cmake_minimum_required(VERSION 3.16)
 
 project(winxplorer6 VERSION 0.1 LANGUAGES CXX)
 
+set(KF6_MIN_VERSION "6.11")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTORCC ON)
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
 find_package(KF6WindowSystem)
 find_package(KF6KIO)
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Quick Multimedia Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS
+    Core Widgets
+    Quick Multimedia
+    Concurrent
+)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
@@ -21,8 +26,10 @@ qt_add_qml_module(winxplorer
     VERSION 1.0
     QML_FILES
         Main.qml
+        NavigationBar.qml
         RESOURCES aero.qrc
-        SOURCES filesmodel.h filesmodel.cpp
+
+        SOURCES filesbackend.h filesbackend.cpp
     DEPENDENCIES
         Controls
         Panes
