@@ -119,13 +119,6 @@ void FilesModel::refreshFileList()
     m_loadingThread->filter = m_currentDir->filter();
 
     QObject::connect(m_loadingThread, &FileFetcherThread::loadingFinished, this, &FilesModel::applyFileList);
-    QObject::connect(m_loadingThread, &QThread::finished, this, [=]() {
-        // make sure that the thread isn't running before deleting it
-        m_loadingThread->terminate();
-        m_loadingThread->wait();
-        delete m_loadingThread;
-        m_loadingThread = nullptr;
-    });
 
     m_loadingThread->start();
 }
