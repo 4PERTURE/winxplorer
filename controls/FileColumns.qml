@@ -11,6 +11,8 @@ Item {
     implicitWidth: parent.width
     implicitHeight: 24
 
+    z: 999999
+
     ListModel {
         id: columns
 
@@ -30,18 +32,6 @@ Item {
             name: "Size"
             width: 130
         }
-    }
-
-    BorderImage {
-        anchors.fill: parent
-
-        border {
-            top: 0
-            bottom: 2
-            right: 0
-            left: 2
-        }
-        source: "qrc:/aero/fileView/header/background.png"
     }
 
     Row {

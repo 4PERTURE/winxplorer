@@ -15,17 +15,16 @@ Item {
 
     readonly property int count: listView.count
 
-    Controls.FileColumns { id: columns; anchors.top: parent.top }
+    Component {
+        id: columns
+
+        Controls.FileColumns {  }
+    }
 
     MouseArea {
         id: viewArea
 
-        anchors {
-            top: columns.bottom
-            bottom: parent.bottom
-            left: parent.left
-            right: parent.right
-        }
+        anchors.fill: parent
 
         hoverEnabled: true
 
@@ -67,6 +66,23 @@ Item {
 
         // put the listview inside a scrollview to get rid of the
         // flicking and forced smooth scrolling
+        BorderImage {
+            anchors {
+                right: listScrollView.right
+                left: listScrollView.left
+            }
+
+            height: 24
+
+            border {
+                top: 0
+                bottom: 2
+                right: 0
+                left: 2
+            }
+            source: "qrc:/aero/fileView/header/background.png"
+        }
+
         QQC2.ScrollView {
             id: listScrollView
 
@@ -92,7 +108,7 @@ Item {
                     }
                 }
 
-                contentWidth: columns.columnsWidth
+                contentWidth: headerItem.columnsWidth
 
                 Timer {
                     id: resetSearchStr
@@ -112,6 +128,8 @@ Item {
                 model: FilesModel
                 clip: true
                 reuseItems: true
+                header: columns
+                headerPositioning: ListView.OverlayHeader
                 pressDelay: 0
                 boundsBehavior: Flickable.StopAtBounds
                 pixelAligned: true
@@ -121,7 +139,7 @@ Item {
                     required property var model
                     required property int index
 
-                    width: paneRoot.width - listScrollView.scrollBarWidth
+                    width: listView.headerItem.columnsWidth
                     height: 19
 
                     hoverEnabled: true
@@ -130,7 +148,11 @@ Item {
                         viewArea.forceActiveFocus();
                         listView.currentIndex = model.index;
                     }
-                    onDoubleClicked: FilesModel.trigger(index);
+                    onDoubleClicked: {
+                        viewArea.forceActiveFocus();
+                        listView.currentIndex = model.index;
+                        FilesModel.trigger(index);
+                    }
 
                     BorderImage {
                         readonly property string state: {
@@ -166,9 +188,9 @@ Item {
                             id: name
 
                             readonly property int nameColumnWidth: {
-                                for(var i = 0; i < columns.columns.count; i++) {
-                                    if(columns.columns.get(i).name === "Name")
-                                        return columns.columns.get(i).width;
+                                for(var i = 0; i < listView.headerItem.columns.count; i++) {
+                                    if(listView.headerItem.columns.get(i).name === "Name")
+                                        return listView.headerItem.columns.get(i).width;
                                 }
                             }
 
@@ -208,9 +230,9 @@ Item {
                             id: type
 
                             readonly property int typeColumnWidth: {
-                                for(var i = 0; i < columns.columns.count; i++) {
-                                    if(columns.columns.get(i).name === "Type")
-                                        return columns.columns.get(i).width;
+                                for(var i = 0; i < listView.headerItem.columns.count; i++) {
+                                    if(listView.headerItem.columns.get(i).name === "Type")
+                                        return listView.headerItem.columns.get(i).width;
                                 }
                             }
 
@@ -229,9 +251,9 @@ Item {
                             id: modifiedDate
 
                             readonly property int dateColumnWidth: {
-                                for(var i = 0; i < columns.columns.count; i++) {
-                                    if(columns.columns.get(i).name === "Date modified")
-                                        return columns.columns.get(i).width;
+                                for(var i = 0; i < listView.headerItem.columns.count; i++) {
+                                    if(listView.headerItem.columns.get(i).name === "Date modified")
+                                        return listView.headerItem.columns.get(i).width;
                                 }
                             }
 
@@ -250,9 +272,9 @@ Item {
                             id: size
 
                             readonly property int sizeColumnWidth: {
-                                for(var i = 0; i < columns.columns.count; i++) {
-                                    if(columns.columns.get(i).name === "Size")
-                                        return columns.columns.get(i).width;
+                                for(var i = 0; i < listView.headerItem.columns.count; i++) {
+                                    if(listView.headerItem.columns.get(i).name === "Size")
+                                        return listView.headerItem.columns.get(i).width;
                                 }
                             }
 

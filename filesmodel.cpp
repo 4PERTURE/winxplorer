@@ -1,22 +1,24 @@
 #include "filesmodel.h"
 
-#include <QMimeDatabase>
 #include <QDesktopServices>
 #include <QUrl>
 #include <QAudioOutput>
-
-#include <KF6/KIOCore/kio/global.h>
+#include <QtConcurrent/QtConcurrent>
+#include <QFuture>
 
 FilesModel::FilesModel(QObject *parent)
     : QAbstractListModel{parent}
 {
-    connect(this, &FilesModel::refresh, this, &FilesModel::getFiles);
+    connect(this, &FilesModel::refresh, this, &FilesModel::refreshFileList);
 
     m_currentDir = new QDir();
 
+    m_currentDir->setSorting(QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
+    m_currentDir->setFilter(QDir::AllEntries | QDir::Hidden);
+
     m_watcher = new QFileSystemWatcher();
-    connect(m_watcher, &QFileSystemWatcher::fileChanged, this, &FilesModel::getFiles);
-    connect(m_watcher, &QFileSystemWatcher::directoryChanged, this, &FilesModel::getFiles);
+    connect(m_watcher, &QFileSystemWatcher::fileChanged, this, &FilesModel::refreshFileList);
+    connect(m_watcher, &QFileSystemWatcher::directoryChanged, this, &FilesModel::refreshFileList);
 
     m_navigationSound = new QMediaPlayer();
     m_navigationSound->setSource(QUrl("qrc:/aero/navStart.wav"));
@@ -28,14 +30,20 @@ FilesModel::FilesModel(QObject *parent)
 FilesModel::~FilesModel()
 {
     // or if this disconnection part is necessary
-    disconnect(m_watcher, &QFileSystemWatcher::fileChanged, this, &FilesModel::getFiles);
-    disconnect(m_watcher, &QFileSystemWatcher::directoryChanged, this, &FilesModel::getFiles);
+    disconnect(m_watcher, &QFileSystemWatcher::fileChanged, this, &FilesModel::refreshFileList);
+    disconnect(m_watcher, &QFileSystemWatcher::directoryChanged, this, &FilesModel::refreshFileList);
 
     delete m_currentDir;
     delete m_watcher;
 
     delete m_navigationSound->audioOutput();
     delete m_navigationSound;
+
+    if(m_loadingThread) {
+        m_loadingThread->terminate();
+        m_loadingThread->wait();
+        delete m_loadingThread;
+    }
 }
 
 int FilesModel::rowCount(const QModelIndex &parent) const
@@ -49,25 +57,25 @@ QVariant FilesModel::data(const QModelIndex &index, int role) const
     if(!index.isValid() && index.row() < 0 && index.row() > m_files.length())
         return 0;
 
-    FilesDelegate* delegate = m_files[index.row()];
+    QSharedPointer<FileDelegate> delegate = m_files.at(index.row());
 
     switch((FileRole) role) {
     case NameRole:
-        return delegate->name();
+        return delegate->name;
     case IconNameRole:
-        return delegate->iconName();
+        return delegate->iconName;
     case MimeTypeRole:
-        return delegate->mimeType();
+        return delegate->mimeType;
     case PathRole:
-        return delegate->path();
+        return delegate->path;
     case ModifiedRole:
-        return delegate->modifiedDate();
+        return delegate->modifiedDate;
     case SizeRole:
-        return delegate->size();
+        return delegate->size;
     case HiddenRole:
-        return delegate->isHidden();
+        return delegate->isHidden;
     case EmblemNameRole:
-        return delegate->emblemName();
+        return delegate->emblemName;
     }
 
     return QVariant();
@@ -78,64 +86,48 @@ QString FilesModel::currentDir()
     return m_currentDir->absolutePath();
 }
 
-QString FilesModel::getMimeType(const QString &filePath)
+void FilesModel::applyFileList(const QList<QSharedPointer<FileDelegate>> fileList)
 {
-    QMimeDatabase mimeDb;
-    QMimeType mime = mimeDb.mimeTypeForFile(filePath);
-    return mime.name();
+    beginInsertRows(QModelIndex(), 0, fileList.length()-1);
+    for(int i = 0; i < fileList.length(); i++) {
+        QSharedPointer<FileDelegate> delegate = fileList[i];
+
+        m_watcher->addPath(delegate->path);
+
+        m_files.append(delegate);
+    }
+    endInsertRows();
 }
 
-QString FilesModel::getEmblem(const QFileInfo &file)
+void FilesModel::refreshFileList()
 {
-    if(!file.isReadable() || !file.isWritable())
-        return "emblem-readonly";
-    if(file.isSymLink())
-        return "emblem-symbolic-link";
-    else
-        return "";
-}
+    m_watcher->removePaths(m_watcher->files());
 
-void FilesModel::getFiles()
-{
     beginResetModel();
     m_files.clear();
     endResetModel();
 
-    m_currentDir->setSorting(QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
-    m_currentDir->setFilter(QDir::AllEntries | QDir::Hidden);
-
-    QList<QFileInfo> fileList = m_currentDir->entryInfoList();
-
-    if(m_watcher->files().count() > 0) {
-        for(int i = 0; i < m_watcher->files().count(); i++) {
-            m_watcher->removePath(m_watcher->files().at(i));
-        }
+    if(m_loadingThread) {
+        m_loadingThread->terminate();
+        m_loadingThread->wait();
+        delete m_loadingThread;
     }
 
-    beginInsertRows(QModelIndex(), 0, fileList.length()-3);
-    for(int i = 0; i < fileList.length(); i++) {
-        if(fileList[i].fileName() == "." || fileList[i].fileName() == "..") {
-            fileList.removeAt(i);
-            i = 0;
-        }
-        else {
-            m_watcher->addPath(fileList[i].absoluteFilePath());
+    m_loadingThread = new FileFetcherThread();
+    m_loadingThread->sdir = m_currentDir->absolutePath();
+    m_loadingThread->sortingFlags = m_currentDir->sorting();
+    m_loadingThread->filter = m_currentDir->filter();
 
-            FilesDelegate * delegate = new FilesDelegate();
+    QObject::connect(m_loadingThread, &FileFetcherThread::loadingFinished, this, &FilesModel::applyFileList);
+    QObject::connect(m_loadingThread, &QThread::finished, this, [=]() {
+        // make sure that the thread isn't running before deleting it
+        m_loadingThread->terminate();
+        m_loadingThread->wait();
+        delete m_loadingThread;
+        m_loadingThread = nullptr;
+    });
 
-            delegate->setName(fileList[i].fileName());
-            delegate->setIconName(KIO::iconNameForUrl(QUrl::fromLocalFile(fileList[i].absoluteFilePath())));
-            delegate->setMimeType(getMimeType(fileList[i].absoluteFilePath()));
-            delegate->setPath(fileList[i].absoluteFilePath());
-            delegate->setModifiedDate(fileList[i].lastModified().toString());
-            delegate->setSize(fileList[i].isDir() ? "" : QString::number(fileList[i].size()/1024) + " KB");
-            delegate->setHidden(fileList[i].isHidden());
-            delegate->setEmblemName(getEmblem(fileList[i]));
-
-            m_files.append(delegate);
-        }
-    }
-    endInsertRows();
+    m_loadingThread->start();
 }
 
 void FilesModel::setCurrentDir(const QString &newDir)
@@ -225,7 +217,7 @@ void FilesModel::trigger(const int &index)
     if(index < 0 && index > m_files.length())
         return;
 
-    QFileInfo file(m_files.at(index)->path());
+    QFileInfo file(m_files.at(index)->path);
 
     if(file.isDir()) {
         if(m_forwardHistory.length() > 0) {

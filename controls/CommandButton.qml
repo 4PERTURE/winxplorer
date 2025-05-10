@@ -52,11 +52,11 @@ MouseArea {
                 implicitWidth: 16
                 implicitHeight: implicitWidth
 
-                source: model.icon
+                source: controlRoot.model.icon
             }
 
             Text {
-                text: model.title
+                text: controlRoot.model.title
                 color: "white"
                 style: Text.Outline
                 styleColor: "#00FFFFFF"

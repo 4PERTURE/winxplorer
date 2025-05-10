@@ -8,7 +8,7 @@ set(QT_QML_GENERATE_QMLLS_INI ON)
 
 find_package(KF6WindowSystem)
 find_package(KF6KIO)
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Quick Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Quick Multimedia Concurrent)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
@@ -48,6 +48,7 @@ target_link_libraries(winxplorer
         Qt6::Core
         Qt6::Widgets
         Qt6::Multimedia
+        Qt6::Concurrent
 
         Controlsplugin Panesplugin
     PUBLIC

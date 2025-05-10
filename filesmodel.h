@@ -6,48 +6,88 @@
 #include <QDir>
 #include <QFileSystemWatcher>
 #include <QMediaPlayer>
+#include <QThread>
+#include <QMimeDatabase>
 
-class FilesDelegate : public QObject
+#include <KF6/KIOCore/kio/global.h>
+
+struct FileDelegate {
+    QString name;
+    QString iconName;
+    QString mimeType;
+    QString path;
+    QString modifiedDate;
+    QString size;
+    bool isHidden;
+    QString emblemName;
+};
+
+class FileFetcherThread : public QThread
 {
     Q_OBJECT
 
 public:
-    explicit FilesDelegate() {}
+    QString getMimeType(const QString &filePath)
+    {
+        QMimeDatabase mimeDb;
+        QMimeType mime = mimeDb.mimeTypeForFile(filePath);
+        return mime.name();
+    }
 
-    QString name() { return m_name; }
-    void setName(const QString &newName) { m_name = newName; }
+    QString getEmblem(const QFileInfo &file)
+    {
+        if(!file.isReadable() || !file.isWritable())
+            return "emblem-readonly";
+        if(file.isSymLink())
+            return "emblem-symbolic-link";
+        else
+            return "";
+    }
 
-    QString iconName() { return m_iconName; }
-    void setIconName(const QString &newIcon) { m_iconName = newIcon; }
+    QString sdir;
+    QDir::SortFlags sortingFlags;
+    QDir::Filters filter;
 
-    QString mimeType() { return m_mimeType; }
-    void setMimeType(const QString &newMimeType) { m_mimeType = newMimeType; }
+public slots:
+    void run() {
+        // We need to immediately terminate the thread if
+        // the current directory changes before this thread
+        // even finished loading the past directory.
+        setTerminationEnabled(true);
 
-    QString path() { return m_path; }
-    void setPath(const QString &newPath) { m_path = newPath; }
+        QList<QSharedPointer<FileDelegate>> finalFilesList;
 
-    QString modifiedDate() { return m_modifiedDate; }
-    void setModifiedDate(const QString &newDate) { m_modifiedDate = newDate; }
+        QDir currentDir(sdir);
+        currentDir.setSorting(sortingFlags);
+        currentDir.setFilter(filter);
 
-    QString size() { return m_size; }
-    void setSize(const QString &newSize) { m_size = newSize; }
+        QList<QFileInfo> fileList = currentDir.entryInfoList();
 
-    bool isHidden() { return m_isHidden; }
-    void setHidden(const bool &isHidden) { m_isHidden = isHidden; }
+        for(int i = 0; i < fileList.length(); i++) {
+            if(fileList[i].fileName() == "." || fileList[i].fileName() == ".." || !fileList[i].exists())
+                continue;
 
-    QString emblemName() { return m_emblemName; }
-    void setEmblemName(const QString &newEmblem) { m_emblemName = newEmblem; }
+            QString absolutePath = fileList[i].absoluteFilePath();
 
-private:
-    QString m_name;
-    QString m_iconName;
-    QString m_mimeType;
-    QString m_path;
-    QString m_modifiedDate;
-    QString m_size;
-    bool m_isHidden;
-    QString m_emblemName;
+            QSharedPointer<FileDelegate> delegate(new FileDelegate);
 
+            delegate->name = fileList[i].fileName();
+            delegate->iconName = KIO::iconNameForUrl(QUrl::fromLocalFile(absolutePath));
+            delegate->mimeType = getMimeType(absolutePath);
+            delegate->path = absolutePath;
+            delegate->modifiedDate = fileList[i].lastModified().toString();
+            delegate->size = fileList[i].isDir() ? "" : QString::number(fileList[i].size()/1024) + " KB";
+            delegate->isHidden = fileList[i].isHidden();
+            delegate->emblemName = getEmblem(fileList[i]);
+
+            finalFilesList.append(delegate);
+        }
+
+        emit loadingFinished(finalFilesList);
+    }
+
+signals:
+    void loadingFinished(const QList<QSharedPointer<FileDelegate>> filesList);
 };
 
 class FilesModel : public QAbstractListModel
@@ -96,17 +136,19 @@ public:
 
     Q_INVOKABLE QStringList history(const int &type);
 
-    QString getMimeType(const QString &filePath);
-    QString getEmblem(const QFileInfo &file);
-    void getFiles();
-
     Q_INVOKABLE void trigger(const int &index);
+
+public slots:
+    void applyFileList(const QList<QSharedPointer<FileDelegate>> fileList);
+    void refreshFileList();
 
 signals:
     Q_INVOKABLE void refresh();
 
 private:
-    QList<FilesDelegate*> m_files;
+    FileFetcherThread *m_loadingThread = nullptr;
+
+    QList<QSharedPointer<FileDelegate>> m_files;
 
     QDir *m_currentDir;
     QFileSystemWatcher *m_watcher;

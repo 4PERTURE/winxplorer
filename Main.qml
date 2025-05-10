@@ -28,9 +28,7 @@ Window {
         }
     }
 
-    Component.onCompleted: {
-        FilesModel.currentDir = "/";
-    }
+    Component.onCompleted: FilesModel.currentDir = "/";
 
     component AeroBar: Item {
         id: bar
