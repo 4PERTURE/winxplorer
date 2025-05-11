@@ -11,6 +11,8 @@ import Controls as Controls
 Item {
     id: paneRoot
 
+    property alias listView: listView
+
     readonly property int count: listView.count
 
     MouseArea {
@@ -150,6 +152,12 @@ Item {
                     target: listView
                     property: "currentIndex"
                     value: listView.selectedIndex
+                    restoreMode: Binding.RestoreValue
+                }
+                Binding {
+                    target: root
+                    property: "selectedFile"
+                    value: listView.currentItem
                     restoreMode: Binding.RestoreValue
                 }
 

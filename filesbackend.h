@@ -20,6 +20,7 @@ struct FileDelegate {
     QString mimeType;
     QString path;
     QString modifiedDate;
+    QString createdDate;
     QString size;
     bool isHidden;
     QString emblemName;
@@ -34,7 +35,7 @@ public:
     {
         QMimeDatabase mimeDb;
         QMimeType mime = mimeDb.mimeTypeForFile(filePath);
-        return mime.name();
+        return mime.comment();
     }
 
     QString getEmblem(const QFileInfo &file)
@@ -79,6 +80,7 @@ public slots:
             delegate->mimeType = getMimeType(absolutePath);
             delegate->path = absolutePath;
             delegate->modifiedDate = fileList[i].lastModified().toString();
+            delegate->createdDate = fileList[i].birthTime().toString();
             delegate->size = fileList[i].isDir() ? "" : QString::number(fileList[i].size()/1024) + " KB";
             delegate->isHidden = fileList[i].isHidden();
             delegate->emblemName = getEmblem(fileList[i]);
@@ -97,12 +99,14 @@ class FilesModel : public QAbstractListModel
 {
     Q_OBJECT
 
+    Q_PROPERTY(int count READ count NOTIFY finishRefresh)
+
     Q_PROPERTY(QString currentDir READ currentDir WRITE setCurrentDir NOTIFY currentDirChanged)
     Q_PROPERTY(QString currentDirIcon READ currentDirIcon NOTIFY currentDirChanged)
 
-    Q_PROPERTY(bool canGoBack READ canGoBack NOTIFY refresh)
-    Q_PROPERTY(bool canGoForward READ canGoForward NOTIFY refresh)
-    Q_PROPERTY(bool canGoUp READ canGoUp NOTIFY refresh)
+    Q_PROPERTY(bool canGoBack READ canGoBack NOTIFY beginRefresh)
+    Q_PROPERTY(bool canGoForward READ canGoForward NOTIFY beginRefresh)
+    Q_PROPERTY(bool canGoUp READ canGoUp NOTIFY beginRefresh)
 
 public:
     explicit FilesModel(QObject *parent = nullptr);
@@ -113,7 +117,8 @@ public:
         IconNameRole,
         MimeTypeRole,
         PathRole,
-        ModifiedRole,
+        ModifiedDateRole,
+        CreatedDateRole,
         SizeRole,
         HiddenRole,
         EmblemNameRole
@@ -123,6 +128,8 @@ public:
     virtual int rowCount(const QModelIndex &parent) const override;
     virtual QVariant data(const QModelIndex &index, int role) const override;
     virtual QHash<int, QByteArray> roleNames() const override;
+
+    int count();
 
     QString currentDir();
     void setCurrentDir(const QString &newDir);
@@ -147,7 +154,8 @@ public slots:
     void refreshFileList();
 
 signals:
-    Q_INVOKABLE void refresh();
+    Q_INVOKABLE void beginRefresh();
+    void finishRefresh();
     void currentDirChanged();
 
 private:

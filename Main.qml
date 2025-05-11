@@ -12,11 +12,17 @@ import Panes as Panes
 import io.gitgud.catpswin56.private.filesbackend as FilesBackend
 
 Window {
+    id: root
+
+    property Item selectedFile: null
+
     width: 786
     height: 534
-    visible: true
+
     title: qsTr("Windows Explorer")
     color: "transparent"
+
+    visible: true
 
     Component.onCompleted: filesModel.currentDir = "/";
 

@@ -11,7 +11,7 @@ using namespace FilesBackend;
 FilesModel::FilesModel(QObject *parent)
     : QAbstractListModel{parent}
 {
-    connect(this, &FilesModel::refresh, this, &FilesModel::refreshFileList);
+    connect(this, &FilesModel::beginRefresh, this, &FilesModel::refreshFileList);
 
     m_currentDir = new QDir();
     m_currentDir->setSorting(QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
@@ -70,8 +70,10 @@ QVariant FilesModel::data(const QModelIndex &index, int role) const
         return delegate->mimeType;
     case PathRole:
         return delegate->path;
-    case ModifiedRole:
+    case ModifiedDateRole:
         return delegate->modifiedDate;
+    case CreatedDateRole:
+        return delegate->createdDate;
     case SizeRole:
         return delegate->size;
     case HiddenRole:
@@ -99,11 +101,13 @@ void FilesModel::applyFileList(const QList<QSharedPointer<FileDelegate>> fileLis
         m_files.append(delegate);
     }
     endInsertRows();
+    emit finishRefresh();
 }
 
 void FilesModel::refreshFileList()
 {
-    m_watcher->removePaths(m_watcher->files());
+    if(m_watcher->files().length() > 0)
+        m_watcher->removePaths(m_watcher->files());
 
     beginResetModel();
     m_files.clear();
@@ -135,7 +139,7 @@ void FilesModel::setCurrentDir(const QString &newDir)
     emit currentDirChanged();
 
     m_canGoUp = m_currentDir->absolutePath() != "/";
-    emit refresh();
+    emit beginRefresh();
 }
 
 QString FilesModel::currentDirIcon()
@@ -240,6 +244,10 @@ void FilesModel::trigger(const int &index)
 
         setCurrentDir(file.absoluteFilePath());
     }
+    else if(file.isExecutable())
+        QProcess::startDetached(file.absoluteFilePath(), QStringList());
+    else if(file.suffix() == "exe")
+        QProcess::startDetached("wine", QStringList() << file.absoluteFilePath());
     else
         QDesktopServices::openUrl(QUrl::fromLocalFile(file.absoluteFilePath()));
 }
@@ -251,12 +259,18 @@ QHash<int, QByteArray> FilesModel::roleNames() const {
     roles[IconNameRole] = "iconName";
     roles[MimeTypeRole] = "mimeType";
     roles[PathRole] = "path";
-    roles[ModifiedRole] = "modifiedDate";
+    roles[ModifiedDateRole] = "modifiedDate";
+    roles[CreatedDateRole] = "createdDate";
     roles[SizeRole] = "size";
     roles[HiddenRole] = "isHidden";
     roles[EmblemNameRole] = "emblemName";
 
     return roles;
+}
+
+int FilesModel::count()
+{
+    return m_files.length();
 }
 
 #include "moc_filesbackend.cpp"

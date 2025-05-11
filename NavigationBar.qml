@@ -87,7 +87,7 @@ RowLayout {
 
         Connections {
             target: filesModel
-            function onRefresh() {
+            function onBeginRefresh() {
                 navigationBtns.history = Qt.binding(() => filesModel.history(2));
             }
         }
