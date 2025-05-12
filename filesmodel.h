@@ -1,5 +1,5 @@
-#ifndef FILESBACKEND_H
-#define FILESBACKEND_H
+#ifndef FILESMODEL_H
+#define FILESMODEL_H
 
 #include <QObject>
 #include <QAbstractListModel>
@@ -10,9 +10,6 @@
 #include <QMimeDatabase>
 
 #include <KF6/KIOCore/kio/global.h>
-
-namespace FilesBackend
-{
 
 struct FileDelegate {
     QString name;
@@ -65,7 +62,7 @@ public slots:
         currentDir.setSorting(sortingFlags);
         currentDir.setFilter(filter);
 
-        QList<QFileInfo> fileList = currentDir.entryInfoList();
+        QFileInfoList fileList = currentDir.entryInfoList();
 
         for(int i = 0; i < fileList.length(); i++) {
             if(fileList[i].fileName() == "." || fileList[i].fileName() == ".." || !fileList[i].exists())
@@ -148,6 +145,7 @@ public:
     Q_INVOKABLE QStringList history(const int &type);
 
     Q_INVOKABLE void trigger(const int &index);
+    Q_INVOKABLE void trigger(const QString &path);
 
 public slots:
     void applyFileList(const QList<QSharedPointer<FileDelegate>> fileList);
@@ -176,5 +174,5 @@ private:
     QStringList m_forwardHistory;
     QStringList m_backHistory;
 };
-}
-#endif // FILESBACKEND_H
+
+#endif // FILESMODEL_H

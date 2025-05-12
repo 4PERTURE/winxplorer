@@ -63,7 +63,6 @@ MouseArea {
 
                 visible: text !== ""
 
-                // the multieffect shadow was bad :(
                 Text {
                     anchors.fill: parent
                     anchors.topMargin: 1

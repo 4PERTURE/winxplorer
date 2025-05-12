@@ -60,6 +60,11 @@ Window {
     FilesBackend.FilesModel {
         id: filesModel
     }
+    FilesBackend.FavoritesModel {
+        id: favoritesModel
+
+        filesModel: filesModel
+    }
 
     ColumnLayout {
         id: innerContents

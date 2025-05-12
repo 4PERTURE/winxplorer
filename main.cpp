@@ -5,13 +5,15 @@
 
 #include <KF6/KWindowSystem/kwindoweffects.h>
 
-#include "filesbackend.h"
+#include "filesmodel.h"
+#include "favoritesmodel.h"
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    qmlRegisterType<FilesBackend::FilesModel>("io.gitgud.catpswin56.private.filesbackend", 1, 0, "FilesModel");
+    qmlRegisterType<FilesModel>("io.gitgud.catpswin56.private.filesbackend", 1, 0, "FilesModel");
+    qmlRegisterType<FavoritesModel>("io.gitgud.catpswin56.private.filesbackend", 1, 0, "FavoritesModel");
 
     Q_IMPORT_QML_PLUGIN(ControlsPlugin)
     Q_IMPORT_QML_PLUGIN(PanesPlugin)
@@ -32,6 +34,8 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+    app.setWindowIcon(QIcon::fromTheme("system-file-manager"));
 
     return app.exec();
 }

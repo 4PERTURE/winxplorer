@@ -29,7 +29,12 @@ qt_add_qml_module(winxplorer
         NavigationBar.qml
         RESOURCES aero.qrc
 
-        SOURCES filesbackend.h filesbackend.cpp
+    SOURCES
+        filesmodel.h
+        filesmodel.cpp
+        favoritesmodel.h
+        favoritesmodel.cpp
+
     DEPENDENCIES
         Controls
         Panes

@@ -33,7 +33,7 @@ Item {
                     else listView.selectedIndex = 0;
                     break;
                 case(Qt.Key_Return):
-                    filesModel.trigger(listView.currentItem.index);
+                    filesModel.open(listView.currentItem.index);
                     break;
                 case(Qt.Key_Backspace):
                     filesModel.goUp();
@@ -97,8 +97,6 @@ Item {
             opacity: 0.5
         }
 
-        // put the listview inside a scrollview to get rid of the
-        // flicking and forced smooth scrolling
         BorderImage {
             anchors {
                 right: listScrollView.right
@@ -116,6 +114,8 @@ Item {
             source: "qrc:/aero/fileView/header/background.png"
         }
 
+        // put the listview inside a scrollview to get rid of the
+        // flicking and forced smooth scrolling
         QQC2.ScrollView {
             id: listScrollView
 

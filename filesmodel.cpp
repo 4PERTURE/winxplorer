@@ -1,12 +1,10 @@
-#include "filesbackend.h"
+#include "filesmodel.h"
 
 #include <QDesktopServices>
 #include <QUrl>
 #include <QAudioOutput>
 #include <QtConcurrent/QtConcurrent>
 #include <QFuture>
-
-using namespace FilesBackend;
 
 FilesModel::FilesModel(QObject *parent)
     : QAbstractListModel{parent}
@@ -252,6 +250,43 @@ void FilesModel::trigger(const int &index)
         QDesktopServices::openUrl(QUrl::fromLocalFile(file.absoluteFilePath()));
 }
 
+void FilesModel::trigger(const QString &path)
+{
+    QFileInfo file(path);
+
+    if(file.isDir()) {
+        if(m_forwardHistory.length() > 0) {
+            if(file.absoluteFilePath() != m_forwardHistory.at(0)) {
+                m_forwardHistory.clear();
+                m_canGoForward = m_forwardHistory.length() > 0;
+            }
+        }
+
+        // There might be a better way to do this
+        if(m_history.length() > 0) {
+            bool dirToHistory = false;
+
+            for(int i = 0; i < m_history.length(); i++)
+                dirToHistory = m_history.at(i) != file.absolutePath();
+
+            if(dirToHistory)
+                m_history.emplaceFront(file.absolutePath());
+        }
+        else
+            m_history.append(file.absolutePath());
+
+        m_backHistory.append(m_currentDir->absolutePath());
+
+        setCurrentDir(file.absoluteFilePath());
+    }
+    else if(file.isExecutable())
+        QProcess::startDetached(file.absoluteFilePath(), QStringList());
+    else if(file.suffix() == "exe")
+        QProcess::startDetached("wine", QStringList() << file.absoluteFilePath());
+    else
+        QDesktopServices::openUrl(QUrl::fromLocalFile(file.absoluteFilePath()));
+}
+
 QHash<int, QByteArray> FilesModel::roleNames() const {
     QHash<int, QByteArray> roles;
 
@@ -273,4 +308,4 @@ int FilesModel::count()
     return m_files.length();
 }
 
-#include "moc_filesbackend.cpp"
+#include "moc_filesmodel.cpp"
