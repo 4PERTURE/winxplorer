@@ -12,6 +12,7 @@ Item {
     id: paneRoot
 
     property alias listView: listView
+    property string searchFilter: ""
 
     readonly property int count: listView.count
 
@@ -170,6 +171,7 @@ Item {
 
                     function onCurrentDirChanged() {
                         listView.selectedIndex = -1;
+                        paneRoot.searchFilter = "";
                     }
                 }
 
@@ -195,7 +197,12 @@ Item {
                     required property int index
 
                     width: listView.headerItem.columnsWidth
-                    height: 19
+                    height: visible ? 19 : 0
+
+                    visible: {
+                        if(paneRoot.searchFilter === "") return true;
+                        return model.name.toLowerCase().includes(paneRoot.searchFilter.toLowerCase());
+                    }
 
                     hoverEnabled: true
 

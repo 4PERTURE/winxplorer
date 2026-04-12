@@ -8,6 +8,7 @@ RowLayout {
     id: navBar
 
     property alias addressBar: addressBar
+    property string searchText: searchBar.text
 
     implicitHeight: 36
 
@@ -17,12 +18,19 @@ RowLayout {
         id: bar
 
         property bool search: false
-        property alias text: txt.text
+        property string text: search ? textInput.text : txt.text
+        property string path: ""
         property string icon: ""
 
         hoverEnabled: true
 
         implicitHeight: 24
+
+        onClicked: {
+            if(search) {
+                textInput.forceActiveFocus();
+            }
+        }
 
         BorderImage {
             readonly property string state: {
@@ -64,11 +72,27 @@ RowLayout {
 
                 Layout.fillWidth: true
 
-                text: search ? "Search..." : addressBar.path
-                font.italic: search
-                leftPadding: bar.search ? 4 : 0
+                text: path
+                visible: !bar.search
+            }
 
-                opacity: search ? 0.8 : 1.0
+            TextInput {
+                id: textInput
+
+                Layout.fillWidth: true
+
+                visible: bar.search
+                font.italic: true
+
+                selectByMouse: true
+            }
+
+            Text {
+                visible: bar.search && textInput.text === "" && !textInput.activeFocus
+                text: "Search..."
+                font.italic: true
+                opacity: 0.8
+                leftPadding: 4
             }
         }
     }

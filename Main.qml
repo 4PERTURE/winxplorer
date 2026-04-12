@@ -35,6 +35,10 @@ Window {
 
             leftMargin: 2
         }
+
+        Component.onCompleted: {
+            navBar.addressBar.path = Qt.binding(() => filesModel.currentDir);
+        }
     }
 
     Rectangle {
@@ -75,6 +79,13 @@ Window {
         anchors.margins: 2
 
         spacing: 0
+
+        Connections {
+            target: navBar
+            function onSearchTextChanged() {
+                filesPane.searchFilter = navBar.searchText;
+            }
+        }
 
         component PaneSeparator: Item {
             implicitWidth: 2
