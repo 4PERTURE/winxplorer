@@ -8,15 +8,16 @@
 #include "filesmodel.h"
 #include "favoritesmodel.h"
 
+
+Q_IMPORT_QML_PLUGIN(ControlsPlugin)
+Q_IMPORT_QML_PLUGIN(PanesPlugin)
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
     qmlRegisterType<FilesModel>("io.gitgud.catpswin56.private.filesbackend", 1, 0, "FilesModel");
     qmlRegisterType<FavoritesModel>("io.gitgud.catpswin56.private.filesbackend", 1, 0, "FavoritesModel");
-
-    Q_IMPORT_QML_PLUGIN(ControlsPlugin)
-    Q_IMPORT_QML_PLUGIN(PanesPlugin)
 
     QQmlApplicationEngine engine;
     QObject::connect(
