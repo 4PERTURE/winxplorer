@@ -21,7 +21,7 @@ WinXplorer is a Windows Explorer recreation (specifically, the Vista explorer) b
 4. Make the command bar actually show commands for files and folders.
 5. Add basic file operations (like copying, moving, etc).
 6. ~~Make the search bar functional.~~ (Partially fixed.)
-7. Make the address bar editable and add the refresh and dropdown buttons to it.
+7. Add refresh and dropdown buttons to address bar.
 8. Add functionality to the history button.
 9. Add the properties and a settings dialog.
 

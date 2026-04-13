@@ -147,6 +147,8 @@ public:
     Q_INVOKABLE void trigger(const int &index);
     Q_INVOKABLE void trigger(const QString &path);
 
+    Q_INVOKABLE bool isValidDirectory(const QString &path);
+
 public slots:
     void applyFileList(const QList<QSharedPointer<FileDelegate>> fileList);
     void refreshFileList();

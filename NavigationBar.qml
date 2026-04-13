@@ -10,6 +10,8 @@ RowLayout {
     property alias addressBar: addressBar
     property string searchText: searchBar.text
 
+    signal showPathError()
+
     implicitHeight: 36
 
     spacing: 0
@@ -18,7 +20,13 @@ RowLayout {
         id: bar
 
         property bool search: false
-        property string text: search ? textInput.text : txt.text
+        property bool editable: false
+        property bool editing: false
+        property string text: {
+            if(search) return textInput.text;
+            if(editing) return addressInput.text;
+            return txt.text;
+        }
         property string path: ""
         property string icon: ""
 
@@ -29,6 +37,11 @@ RowLayout {
         onClicked: {
             if(search) {
                 textInput.forceActiveFocus();
+            } else if(editable && !editing) {
+                editing = true;
+                addressInput.text = path;
+                addressInput.forceActiveFocus();
+                addressInput.selectAll();
             }
         }
 
@@ -73,7 +86,46 @@ RowLayout {
                 Layout.fillWidth: true
 
                 text: path
-                visible: !bar.search
+                visible: !bar.search && !bar.editing
+            }
+
+            TextInput {
+                id: addressInput
+
+                Layout.fillWidth: true
+
+                visible: !bar.search && bar.editing
+                font.italic: false
+
+                selectByMouse: true
+
+                Keys.onPressed: event => {
+                    if(event.key === Qt.Key_Return) {
+                        let inputPath = addressInput.text.trim();
+                        
+                        // Handle special case: "." means root directory
+                        if(inputPath === ".") {
+                            inputPath = "/";
+                        }
+                        
+                        if(filesModel.isValidDirectory(inputPath)) {
+                            filesModel.currentDir = inputPath;
+                            bar.editing = false;
+                        } else {
+                            navBar.showPathError();
+                        }
+                        event.accepted = true;
+                    } else if(event.key === Qt.Key_Escape) {
+                        bar.editing = false;
+                        event.accepted = true;
+                    }
+                }
+
+                onFocusChanged: {
+                    if(!focus && bar.editing) {
+                        bar.editing = false;
+                    }
+                }
             }
 
             TextInput {
@@ -355,8 +407,9 @@ RowLayout {
 
         Layout.fillWidth: true
 
+        editable: true
         icon: filesModel.currentDirIcon
-        text: filesModel.currentDir
+        path: filesModel.currentDir
 
         Row {
             anchors {
@@ -441,5 +494,25 @@ RowLayout {
         Layout.maximumWidth: 240
 
         search: true
+    }
+
+    QQC2.Dialog {
+        id: errorDialog
+
+        title: "Cannot find the specified path"
+        
+        standardButtons: QQC2.Dialog.Ok
+        modal: true
+
+        contentItem: Text {
+            text: "The system cannot find the file specified."
+            wrapMode: Text.WordWrap
+            padding: 16
+        }
+
+        onAccepted: {
+            errorDialog.close();
+            addressBar.editing = false;
+        }
     }
 }

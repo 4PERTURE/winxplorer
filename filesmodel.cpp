@@ -287,6 +287,12 @@ void FilesModel::trigger(const QString &path)
         QDesktopServices::openUrl(QUrl::fromLocalFile(file.absoluteFilePath()));
 }
 
+bool FilesModel::isValidDirectory(const QString &path)
+{
+    QDir dir(path);
+    return dir.exists();
+}
+
 QHash<int, QByteArray> FilesModel::roleNames() const {
     QHash<int, QByteArray> roles;
 

@@ -31,5 +31,6 @@
         <file>aero/misc/detailsShadow.png</file>
         <file>aero/misc/navStart.wav</file>
         <file>aero/fileView/header/item-normal-first.png</file>
+        <file>aero/errorDialogue/error.png</file>
     </qresource>
 </RCC>
