@@ -34,6 +34,8 @@ qt_add_qml_module(winxplorer
         filesmodel.cpp
         favoritesmodel.h
         favoritesmodel.cpp
+        contextmenu.h
+        contextmenu.cpp
 
     DEPENDENCIES
         Controls

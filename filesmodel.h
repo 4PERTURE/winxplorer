@@ -8,7 +8,12 @@
 #include <QMediaPlayer>
 #include <QThread>
 #include <QMimeDatabase>
+#include <QGuiApplication>
+#include <QClipboard>
+#include <QMimeData>
+#include <QUrl>
 
+#include "contextmenu.h"
 #include <KF6/KIOCore/kio/global.h>
 
 struct FileDelegate {
@@ -148,6 +153,14 @@ public:
     Q_INVOKABLE void trigger(const QString &path);
 
     Q_INVOKABLE bool isValidDirectory(const QString &path);
+    
+    Q_INVOKABLE void copyFile(const QString &fileName);
+    Q_INVOKABLE void cutFile(const QString &fileName);
+    Q_INVOKABLE void pasteFile();
+    Q_INVOKABLE void deleteFile(const QString &fileName);
+    
+    Q_INVOKABLE void showContextMenu(int x, int y, const QString &fileName);
+    Q_INVOKABLE bool canPaste() const;
 
 public slots:
     void applyFileList(const QList<QSharedPointer<FileDelegate>> fileList);
@@ -175,6 +188,10 @@ private:
     QStringList m_history;
     QStringList m_forwardHistory;
     QStringList m_backHistory;
+    
+    bool m_isCutOperation = false;
+    ContextMenu *m_contextMenu = nullptr;
+    QString m_currentContextFileName;
 };
 
 #endif // FILESMODEL_H

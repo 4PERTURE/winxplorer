@@ -24,6 +24,19 @@ FilesModel::FilesModel(QObject *parent)
     m_navigationSound->setSource(QUrl("qrc:/aero/misc/navStart.wav"));
     QAudioOutput *audioOutput = new QAudioOutput();
     m_navigationSound->setAudioOutput(audioOutput);
+    
+    m_contextMenu = new ContextMenu(this);
+    connect(m_contextMenu, &ContextMenu::triggered, this, [this](const QString &actionName) {
+        if(actionName == "copy") {
+            copyFile(m_currentContextFileName);
+        } else if(actionName == "cut") {
+            cutFile(m_currentContextFileName);
+        } else if(actionName == "paste") {
+            pasteFile();
+        } else if(actionName == "delete") {
+            deleteFile(m_currentContextFileName);
+        }
+    });
 }
 
 // idk if this works lmao
@@ -291,6 +304,96 @@ bool FilesModel::isValidDirectory(const QString &path)
 {
     QDir dir(path);
     return dir.exists();
+}
+
+void FilesModel::copyFile(const QString &fileName)
+{
+    QString fullPath = m_currentDir->absoluteFilePath(fileName);
+    QMimeData *mimeData = new QMimeData();
+    mimeData->setUrls(QList<QUrl>() << QUrl::fromLocalFile(fullPath));
+    
+    QGuiApplication::clipboard()->setMimeData(mimeData);
+    m_isCutOperation = false;
+}
+
+void FilesModel::cutFile(const QString &fileName)
+{
+    QString fullPath = m_currentDir->absoluteFilePath(fileName);
+    QMimeData *mimeData = new QMimeData();
+    mimeData->setUrls(QList<QUrl>() << QUrl::fromLocalFile(fullPath));
+    
+    QGuiApplication::clipboard()->setMimeData(mimeData);
+    m_isCutOperation = true;
+}
+
+void FilesModel::pasteFile()
+{
+    const QMimeData *mimeData = QGuiApplication::clipboard()->mimeData();
+    
+    if(!mimeData->hasUrls())
+        return;
+    
+    QList<QUrl> urls = mimeData->urls();
+    
+    for(const QUrl &url : urls) {
+        QString sourcePath = url.toLocalFile();
+        QString fileName = QFileInfo(sourcePath).fileName();
+        QString destPath = m_currentDir->absoluteFilePath(fileName);
+        
+        if(m_isCutOperation) {
+            QFile::rename(sourcePath, destPath);
+        } else {
+            QFile::copy(sourcePath, destPath);
+        }
+    }
+    
+    refreshFileList();
+}
+
+void FilesModel::deleteFile(const QString &fileName)
+{
+    QString fullPath = m_currentDir->absoluteFilePath(fileName);
+    QFileInfo fileInfo(fullPath);
+    
+    if(fileInfo.isDir()) {
+        QDir dir(fullPath);
+        dir.removeRecursively();
+    } else {
+        QFile file(fullPath);
+        file.remove();
+    }
+    
+    refreshFileList();
+}
+
+void FilesModel::showContextMenu(int x, int y, const QString &fileName)
+{
+    m_currentContextFileName = fileName;
+    
+    bool canPaste = (QGuiApplication::clipboard()->mimeData() && 
+                     QGuiApplication::clipboard()->mimeData()->hasUrls());
+    
+    m_contextMenu->clear();
+    
+    if(fileName.isEmpty()) {
+        // Empty space - only show Paste
+        m_contextMenu->addAction("Paste", "paste", canPaste);
+    } else {
+        // File/folder - show all options
+        m_contextMenu->addAction("Copy", "copy", true);
+        m_contextMenu->addAction("Cut", "cut", true);
+        m_contextMenu->addAction("Paste", "paste", canPaste);
+        m_contextMenu->addSeparator();
+        m_contextMenu->addAction("Delete", "delete", true);
+    }
+    
+    m_contextMenu->popup(x, y);
+}
+
+bool FilesModel::canPaste() const
+{
+    const QMimeData *mimeData = QGuiApplication::clipboard()->mimeData();
+    return (mimeData && mimeData->hasUrls());
 }
 
 QHash<int, QByteArray> FilesModel::roleNames() const {

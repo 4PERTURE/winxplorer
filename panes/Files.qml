@@ -22,6 +22,16 @@ Item {
         anchors.fill: parent
 
         hoverEnabled: true
+        
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        
+        onPressed: (mouse) => {
+            if(mouse.button === Qt.RightButton) {
+                var globalPos = viewArea.mapToGlobal(mouse.x, mouse.y);
+                filesModel.showContextMenu(globalPos.x, globalPos.y, "");
+                mouse.accepted = true;
+            }
+        }
 
         Keys.onPressed: event => {
             switch(event.key) {
@@ -215,6 +225,34 @@ Item {
                         listView.selectedIndex = model.index;
                         filesModel.trigger(index);
                     }
+                    
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    
+                    property var contextMenu: null
+                    
+                    onPressed: (mouse) => {
+                        if(mouse.button === Qt.RightButton) {
+                            listView.selectedIndex = model.index;
+                            
+                            if(!contextMenu) {
+                                contextMenu = nativeContextMenuComponent.createObject(fileRoot);
+                            }
+                            
+                            var globalPos = fileRoot.mapToGlobal(mouse.x, mouse.y);
+                            contextMenu.popup(globalPos.x, globalPos.y, {name: fileRoot.model.name});
+                        }
+                    }
+                    
+                    Component {
+                        id: nativeContextMenuComponent
+                        Item {
+                            id: menuWrapper
+                            function popup(x, y, data) {
+                                filesModel.showContextMenu(x, y, data.name);
+                            }
+                        }
+                    }
+
 
                     BorderImage {
                         readonly property string state: {
@@ -349,6 +387,30 @@ Item {
                         }
 
                         Item { Layout.fillWidth: true }
+                    }
+                }
+            }
+        }
+        
+        // Overlay MouseArea for ALL right-clicks (file or empty space)
+        MouseArea {
+            id: contextMenuOverlay
+            anchors.fill: listScrollView
+            acceptedButtons: Qt.RightButton
+            
+            onPressed: (mouse) => {
+                if(mouse.button === Qt.RightButton) {
+                    // Check if clicked on a file or empty space
+                    var itemAtMouse = listView.itemAt(mouse.x, mouse.y + listView.contentY);
+                    
+                    if(itemAtMouse) {
+                        // Click is on a file, let the delegate handle it
+                        mouse.accepted = false;
+                    } else {
+                        // Click is on empty space, show menu
+                        var globalPos = contextMenuOverlay.mapToGlobal(mouse.x, mouse.y);
+                        filesModel.showContextMenu(globalPos.x, globalPos.y, "");
+                        mouse.accepted = true;
                     }
                 }
             }
